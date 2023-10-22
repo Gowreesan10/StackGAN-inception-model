@@ -214,12 +214,12 @@ def main(unused_argv=None):
     restore_op_name_to_variable_name = checkpoint_reader.get_variable_to_shape_map()
     restore_variable_map = {}
     for key_name, variable in variables_to_restore.items():
-  	restore_variable_name = restore_op_name_to_variable_name.get(key_name)
-  	if restore_variable_name is None:
-    			# skip variables in the optimizer graph
-    	    continue
-  	print('restore %s from %s' % (key_name, restore_variable_name))
-  	restore_variable_map[key_name] = tf.train.get_variable_by_name(restore_variable_name)
+      restore_variable_name = restore_op_name_to_variable_name.get(key_name)
+      if restore_variable_name is None:
+    # skip variables in the optimizer graph
+        continue
+      print('restore %s from %s' % (key_name, restore_variable_name))
+      restore_variable_map[key_name] = tf.train.get_variable_by_name(restore_variable_name)
     tf.train.Saver(restore_variable_map).restore(tf.keras.backend.get_session(), FLAGS.checkpoint_dir)
 
 	# Evaluate the model on the Dataset
