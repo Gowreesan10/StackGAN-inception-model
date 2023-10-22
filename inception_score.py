@@ -38,7 +38,7 @@ else:
     import pickle
 
 
-FLAGS = tf.app.flags.FLAGS
+FLAGS = tf.flags.FLAGS
 
 tf.app.flags.DEFINE_string('checkpoint_dir',
                            './inception_finetuned_models/birds_valid299/model.ckpt-5000',
