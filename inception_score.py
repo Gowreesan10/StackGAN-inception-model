@@ -23,7 +23,7 @@ from PIL import Image
 from inception.slim import slim
 import numpy as np
 import tensorflow as tf
-
+from tensorflow.compat.v1 import flags
 
 import math
 import os.path
@@ -38,22 +38,22 @@ else:
     import pickle
 
 
-FLAGS = tf.compat.flags.Flag
+FLAGS = flags.FLAGS
 
-tf.compat.flags.DEFINE_string('checkpoint_dir',
+flags.DEFINE_string('checkpoint_dir',
                            './inception_finetuned_models/birds_valid299/model.ckpt-5000',
                            """Path where to read model checkpoints.""")
 
-tf.compat.flags.DEFINE_string('image_folder', 
+flags.DEFINE_string('image_folder', 
 							'/Users/han/Documents/CUB_200_2011/CUB_200_2011/images',
 							"""Path where to load the images """)
 
-tf.compat.flags.DEFINE_integer('num_classes', 50,      # 20 for flowers
+flags.DEFINE_integer('num_classes', 50,      # 20 for flowers
                             """Number of classes """)
-tf.compat.flags.DEFINE_integer('splits', 10,
+flags.DEFINE_integer('splits', 10,
                             """Number of splits """)
-tf.compat.flags.DEFINE_integer('batch_size', 64, "batch size")
-tf.compat.flags.DEFINE_integer('gpu', 1, "The ID of GPU to use")
+flags.DEFINE_integer('batch_size', 64, "batch size")
+flags.DEFINE_integer('gpu', 1, "The ID of GPU to use")
 # Batch normalization. Constant governing the exponential moving average of
 # the 'global' mean and variance for all activations.
 BATCHNORM_MOVING_AVERAGE_DECAY = 0.9997
@@ -230,4 +230,4 @@ def main(unused_argv=None):
 
 
 if __name__ == '__main__':
-    tf.compat.run()
+    tf.app.run()
