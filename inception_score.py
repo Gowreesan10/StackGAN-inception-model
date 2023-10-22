@@ -192,40 +192,40 @@ def inference(images, num_classes, for_training=False, restore_logits=True,
 
 def main(unused_argv=None):
     """Evaluate model on Dataset for a number of steps."""
-    with tf.Graph().as_default():
-        config = tf.ConfigProto(allow_soft_placement=True)
-        config.gpu_options.allow_growth = True
-        with tf.Session(config=config) as sess:
-            with tf.device("/gpu:%d" % FLAGS.gpu):
-                # Number of classes in the Dataset label set plus 1.
-                # Label 0 is reserved for an (unused) background class.
-                num_classes = FLAGS.num_classes + 1
+	FLAGS = flags.FLAGS
+	FLAGS.num_classes = 50
 
-                # Build a Graph that computes the logits predictions from the
-                # inference model.
-                inputs = tf.placeholder(
-                    tf.float32, [FLAGS.batch_size, 299, 299, 3],
-                    name='inputs')
-                # print(inputs)
+	# Build the inference model
+	model = tf.keras.applications.InceptionV3(weights='imagenet', include_top=False)
 
-                logits, _ = inference(inputs, num_classes)
-                # calculate softmax after remove 0 which reserve for BG
-                known_logits = \
-                    tf.slice(logits, [0, 1],
-                             [FLAGS.batch_size, num_classes - 1])
-                pred_op = tf.nn.softmax(known_logits)
+	# Build a Graph that computes the logits predictions from the
+	# inference model.
+	inputs = tf.keras.Input(shape=[299, 299, 3], dtype=tf.float32, name='inputs')
+	logits, _ = model(inputs)
 
-                # Restore the moving average version of the
-                # learned variables for eval.
-                variable_averages = \
-                    tf.train.ExponentialMovingAverage(MOVING_AVERAGE_DECAY)
-                variables_to_restore = variable_averages.variables_to_restore()
-                saver = tf.train.Saver(variables_to_restore)
-                saver.restore(sess, FLAGS.checkpoint_dir)
-                print('Restore the model from %s).' % FLAGS.checkpoint_dir)
-                images = load_data(fullpath)
-                get_inception_score(sess, images, pred_op)
+	# calculate softmax after remove 0 which reserve for BG
+	known_logits = tf.slice(logits, [0, 1], [-1, -1])
+	pred_op = tf.nn.softmax(known_logits)
 
+	# Restore the moving average version of the
+	# learned variables for eval.
+	checkpoint_reader = tf.train.load_checkpoint(FLAGS.checkpoint_dir)
+	variable_averages = tf.train.ExponentialMovingAverage(MOVING_AVERAGE_DECAY)
+	variables_to_restore = variable_averages.variables_to_restore()
+	restore_op_name_to_variable_name = checkpoint_reader.get_variable_to_shape_map()
+	restore_variable_map = {}
+	for key_name, variable in variables_to_restore.items():
+  		restore_variable_name = restore_op_name_to_variable_name.get(key_name)
+  		if restore_variable_name is None:
+    			# skip variables in the optimizer graph
+    		continue
+  		print('restore %s from %s' % (key_name, restore_variable_name))
+  		restore_variable_map[key_name] = tf.train.get_variable_by_name(restore_variable_name)
+	tf.train.Saver(restore_variable_map).restore(tf.keras.backend.get_session(), FLAGS.checkpoint_dir)
+
+	# Evaluate the model on the Dataset
+	images = load_data(fullpath)
+	get_inception_score(images, pred_op)
 
 
 
