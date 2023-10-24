@@ -51,7 +51,7 @@ def get_inception_score(images, pred_op):
     bs = FLAGS.batch_size
     preds = []
     num_examples = len(images)
-    n_batches = int(np.floor(float(num_examples) / float(bs))
+    n_batches = int(np.floor(float(num_examples) / float(bs)))
     indices = list(np.arange(num_examples))
     np.random.shuffle(indices)
     for i in range(n_batches):
