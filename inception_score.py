@@ -99,17 +99,22 @@ def inference(images, num_classes, for_training=False, restore_logits=True, scop
         'epsilon': 0.001,
     }
 
-    # Set weight_decay for weights in Conv and FC layers.
-    with tf.compat.v1.keras.layers.experimental.preprocessing():
-        with tf.compat.v1.keras.layers.Conv2D(kernel_regularizer=keras.regularizers.l2(0.00004)):
-            with tf.compat.v1.keras.layers.BatchNormalization():
-                logits, endpoints = keras.applications.InceptionV3(
-                    include_top=True,
-                    weights=None,
-                    input_tensor=images,
-                    input_shape=(299, 299, 3),
-                    classes=num_classes,
-                )
+    # Create a preprocessing layer
+    preprocess_input = keras.applications.inception_v3.preprocess_input
+
+    # Define your InceptionV3 model
+    base_model = keras.applications.InceptionV3(
+        include_top=True,
+        weights=None,
+        input_tensor=preprocess_input(images),  # Use the preprocessing layer here
+        input_shape=(299, 299, 3),
+        classes=num_classes,
+    )
+
+    # Optionally, add regularization to Conv layers
+    for layer in base_model.layers:
+        if isinstance(layer, keras.layers.Conv2D):
+            layer.kernel_regularizer = keras.regularizers.l2(0.00004)
 
     auxiliary_logits = endpoints['predictions']
 
