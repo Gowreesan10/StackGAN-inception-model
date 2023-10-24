@@ -200,6 +200,7 @@ def main(unused_argv=None):
 	# Build a Graph that computes the logits predictions from the
 	# inference model.
     inputs = tf.keras.Input(shape=[299, 299, 3], dtype=tf.float32, name='inputs')
+    print(inputs.shape)
     logits, _ = model(inputs)
 
 	# calculate softmax after remove 0 which reserve for BG
