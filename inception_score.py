@@ -195,7 +195,7 @@ def main(unused_argv=None):
     FLAGS.num_classes = 50
 
 	# Build the inference model
-    model = tf.keras.applications.InceptionV3(weights='imagenet', include_top=False)
+    model = tf.keras.applications.InceptionV3(weights='imagenet', include_top=False,input_shape = (299, 299, 3))
 
 	# Build a Graph that computes the logits predictions from the
 	# inference model.
