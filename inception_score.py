@@ -201,7 +201,7 @@ def main(unused_argv=None):
 	# inference model.
     inputs = tf.keras.Input(shape=[299, 299, 3], dtype=tf.float32, name='inputs')
     print(inputs.shape)
-    logits, _ = model(inputs)
+    logits, _ = model(inputs.shape[1:])
 
 	# calculate softmax after remove 0 which reserve for BG
     known_logits = tf.slice(logits, [0, 1], [-1, -1])
