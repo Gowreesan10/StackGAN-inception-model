@@ -125,9 +125,11 @@ def calculate_inception_score(images, model):
 
 # Main execution
 if __name__ == '__main__':
+    name = input("1: ")
     images = load_data(FLAGS['image_folder'])
+    name = input("2: ")
     model = build_model()
     
-    name = input("Enter your name: ")
+    name = input("3: ")
     mean_score, std_score = calculate_inception_score(images, model)
     print('Inception Score: mean:', mean_score, 'std:', std_score)
