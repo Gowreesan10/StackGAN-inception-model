@@ -5,7 +5,7 @@ from tensorflow.keras.applications.inception_v3 import preprocess_input
 from tensorflow.keras.models import Model
 import scipy.misc
 import os
-
+from IPython.display import clear_output
 # Model and configuration
 FLAGS = {
     'checkpoint_dir': '/content/StackGAN-inception-model/inception_finetuned_models/birds_valid299/model.ckpt',
@@ -127,5 +127,7 @@ def calculate_inception_score(images, model):
 if __name__ == '__main__':
     images = load_data(FLAGS['image_folder'])
     model = build_model()
+    # Clear the current output
+    clear_output()
     mean_score, std_score = calculate_inception_score(images, model)
     print('Inception Score: mean:', mean_score, 'std:', std_score)
