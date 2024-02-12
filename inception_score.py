@@ -3,6 +3,7 @@ from tensorflow import keras
 import numpy as np
 import os
 from PIL import Image
+from tensorflow.keras import layers
 
 # Define your flags using tf.compat.v1.flags
 FLAGS = tf.compat.v1.flags.FLAGS
