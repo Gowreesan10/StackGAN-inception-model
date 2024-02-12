@@ -81,7 +81,7 @@ def build_model():
     # Create a new model with the desired output from 'x'
     model = Model(inputs=base_model.input, outputs=x)
     name = input("load ckp: ")
-    print(os.listdir(FLAGS['checkpoint_dir']))
+    print(os.listdir(FLAGS['checkpoint_dir'].remove(.ckpt))
     # Load weights from checkpoint
     if FLAGS['checkpoint_dir']:
         model.load_weights(FLAGS['checkpoint_dir'])
