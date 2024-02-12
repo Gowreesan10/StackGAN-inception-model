@@ -95,31 +95,28 @@ def load_data(fullpath):
 
 def inference(images, num_classes, for_training=False, restore_logits=True, scope=None):
     batch_norm_params = {
-        'decay': BATCHNORM_MOVING_AVERAGE_DECAY,
+        'momentum': BATCHNORM_MOVING_AVERAGE_DECAY,  # 'decay' renamed to 'momentum'
         'epsilon': 0.001,
     }
 
-    # Create a preprocessing layer
-    preprocess_input = keras.applications.inception_v3.preprocess_input
+    # Model Construction
+    x = layers.Conv2D(filters=32, kernel_size=3, strides=2, padding='valid', 
+                      activation='relu', kernel_initializer='he_normal',
+                      kernel_regularizer=tf.keras.regularizers.l2(0.00004))(inputs)
+    x = layers.BatchNormalization(**batch_norm_params)(x)
+    # ... (Add other Inception v3 blocks in a similar manner)
 
-    # Define your InceptionV3 model
-    base_model = keras.applications.InceptionV3(
-        include_top=True,
-        weights=None,
-        input_tensor=preprocess_input(images),  # Use the preprocessing layer here
-        input_shape=(299, 299, 3),
-        classes=num_classes,
-    )
+    # Final logits (assuming Inception v3 structure)
+    x = layers.GlobalAveragePooling2D()(x)
+    logits = layers.Dense(num_classes)(x)
 
-    # Optionally, add regularization to Conv layers
-    for layer in base_model.layers:
-        if isinstance(layer, keras.layers.Conv2D):
-            layer.kernel_regularizer = keras.regularizers.l2(0.00004)
+    # Auxiliary logits (if applicable)
+    if 'aux_logits' in endpoints:  # Adjust the key if necessary 
+        auxiliary_logits = endpoints['aux_logits']
+    else:
+        auxiliary_logits = None
 
-    # auxiliary_logits = endpoints['predictions']
-
-    # return logits, auxiliary_logits
-    return logits, _
+    return logits, auxiliary_logits
 
 
 def main(unused_argv=None):
