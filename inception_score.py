@@ -116,9 +116,10 @@ def inference(images, num_classes, for_training=False, restore_logits=True, scop
         if isinstance(layer, keras.layers.Conv2D):
             layer.kernel_regularizer = keras.regularizers.l2(0.00004)
 
-    auxiliary_logits = endpoints['predictions']
+    # auxiliary_logits = endpoints['predictions']
 
-    return logits, auxiliary_logits
+    # return logits, auxiliary_logits
+    return logits, _
 
 
 def main(unused_argv=None):
