@@ -8,7 +8,7 @@ import os
 
 # Model and configuration
 FLAGS = {
-    'checkpoint_dir': '/StackGAN-inception-model/inception_finetuned_models/birds_valid299/model.ckpt',
+    'checkpoint_dir': '/content/StackGAN-inception-model/inception_finetuned_models/birds_valid299/model.ckpt',
     'image_folder': '/Users/han/Documents/CUB_200_2011/CUB_200_2011/images',
     'num_classes': 50,  # 20 for flowers
     'splits': 10,
