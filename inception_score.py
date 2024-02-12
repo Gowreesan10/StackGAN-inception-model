@@ -73,18 +73,18 @@ def build_model():
 
     # Extract the mixed_10 layer output
     x = base_model.get_layer('mixed10').output
-
+    
     # Add your custom top layers: Adjust this if your fine-tuned model is different
     x = tf.keras.layers.Flatten()(x)
     x = tf.keras.layers.Dense(FLAGS['num_classes'], activation='softmax')(x)
-
+    name = input("create model: ")
     # Create a new model with the desired output from 'x'
     model = Model(inputs=base_model.input, outputs=x)
-
+    name = input("load ckp: ")
     # Load weights from checkpoint
     if FLAGS['checkpoint_dir']:
         model.load_weights(FLAGS['checkpoint_dir'])
-
+    name = input("ret modl: ")
     return model
 
 
