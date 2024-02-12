@@ -128,4 +128,4 @@ def main(unused_argv=None):
     get_inception_score(images, model) 
 
 if __name__ == '__main__':
-    tf.compat.v1.app.run()  # Not directly needed in TF2
+    main()
