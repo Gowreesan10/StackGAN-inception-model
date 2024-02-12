@@ -1,108 +1,129 @@
-import os
-import math
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.applications import InceptionV3
 from tensorflow.keras.applications.inception_v3 import preprocess_input
-from PIL import Image
+from tensorflow.keras.models import Model
+import scipy.misc
+import os
 
-# Define flags
-FLAGS = tf.compat.v1.flags.FLAGS
-tf.compat.v1.flags.DEFINE_string('checkpoint_dir',
-                                 './inception_finetuned_models/birds_valid299/model.ckpt-5000',
-                                 """Path where to read model checkpoints.""")
-tf.compat.v1.flags.DEFINE_string('image_folder',
-                                 '/Users/han/Documents/CUB_200_2011/CUB_200_2011/images',
-                                 """Path where to load the images """)
-tf.compat.v1.flags.DEFINE_integer('num_classes', 50,      # 20 for flowers
-                                   """Number of classes """)
-tf.compat.v1.flags.DEFINE_integer('splits', 10,
-                                   """Number of splits """)
-tf.compat.v1.flags.DEFINE_integer('batch_size', 64, "batch size")
-tf.compat.v1.flags.DEFINE_integer('gpu', 1, "The ID of GPU to use")
+# Model and configuration
+FLAGS = {
+    'checkpoint_dir': './inception_finetuned_models/birds_valid299/model.ckpt-5000',
+    'image_folder': '/Users/han/Documents/CUB_200_2011/CUB_200_2011/images',
+    'num_classes': 50,  # 20 for flowers
+    'splits': 10,
+    'batch_size': 64,
+    'gpu': 1  # Let's assume you want to use GPU 1
+}
 
-# Batch normalization constants
 BATCHNORM_MOVING_AVERAGE_DECAY = 0.9997
 MOVING_AVERAGE_DECAY = 0.9999
 
 
-def preprocess_image(img):
-    img = img.resize((299, 299))
-    img = np.array(img)
-    img = preprocess_input(img)
+def preprocess(img):
+    """Preprocesses a single image for Inception v3.
+
+    Args:
+        img: Numpy array of the image (H, W, 3).
+
+    Returns:
+        Preprocessed image as a Numpy array.
+    """
+    if len(img.shape) == 2:
+        img = np.stack([img] * 3, axis=-1)  # Handle grayscale
+    img = scipy.misc.imresize(img, (299, 299, 3))
+    img = preprocess_input(img)  # InceptionV3 preprocessing
     return img
 
 
-def get_inception_score(images, pred_model):
-    splits = FLAGS.splits
-    assert(isinstance(images, list))
-    assert(isinstance(images[0], np.ndarray))
-    assert(len(images[0].shape) == 3)
-    assert(np.max(images[0]) > 10)
-    assert(np.min(images[0]) >= 0.0)
+def load_data(fullpath):
+    """Loads images from a directory.
 
-    bs = FLAGS.batch_size
-    preds = []
-    num_examples = len(images)
-    n_batches = int(math.floor(float(num_examples) / float(bs)))
-    indices = list(np.arange(num_examples))
-    np.random.shuffle(indices)
+    Args:
+        fullpath: Path to the image directory.
 
-    for i in range(n_batches):
-        inp = []
-        for j in range(bs):
-            if (i*bs + j) == num_examples:
-                break
-            img = images[indices[i*bs + j]]
-            img = preprocess_image(img)
-            inp.append(img)
-        inp = np.concatenate(inp, 0)
-        pred = pred_model.predict(inp)
-        preds.append(pred)
-
-    preds = np.concatenate(preds, 0)
-    scores = []
-    for i in range(splits):
-        istart = i * preds.shape[0] // splits
-        iend = (i + 1) * preds.shape[0] // splits
-        part = preds[istart:iend, :]
-        kl = (part * (np.log(part) - np.log(np.expand_dims(np.mean(part, 0), 0))))
-        kl = np.mean(np.sum(kl, 1))
-        scores.append(np.exp(kl))
-    print('mean:', "%.2f" % np.mean(scores), 'std:', "%.2f" % np.std(scores))
-    return np.mean(scores), np.std(scores)
-
-
-def load_images(fullpath):
-    print(fullpath)
+    Returns:
+        List of loaded images as Numpy arrays.
+    """
     images = []
-    for root, _, files in os.walk(fullpath):
+    for path, subdirs, files in os.walk(fullpath):
         for name in files:
-            if name.endswith(('jpg', 'png')):
-                filename = os.path.join(root, name)
-                img = Image.open(filename)
-                images.append(img)
-    print('images', len(images), images[0].size)
+            if name.lower().endswith('.jpg') or name.lower().endswith('.png'):
+                filename = os.path.join(path, name)
+                if os.path.isfile(filename):
+                    img = scipy.misc.imread(filename)
+                    images.append(img)
     return images
 
 
-def main(unused_argv=None):
-    config = tf.compat.v1.ConfigProto(allow_soft_placement=True)
-    config.gpu_options.allow_growth = True
+def build_model():
+    """Builds the Inception v3 model with custom output.
 
-    # Load InceptionV3 model
-    inception_model = InceptionV3(weights='imagenet', include_top=True)
+    Returns:
+         Keras Model with the Inception v3 architecture, loaded from
+         checkpoint if specified.
+    """
+    base_model = InceptionV3(
+        include_top=False,
+        weights='imagenet',
+        input_shape=(299, 299, 3)
+    )
 
-    # Load images
-    images = load_images(FLAGS.image_folder)
+    # Extract the mixed_10 layer output
+    x = base_model.get_layer('mixed10').output
 
-    # Preprocess images
-    inception_input = [preprocess_image(img) for img in images]
+    # Add your custom top layers: Adjust this if your fine-tuned model is different
+    x = tf.keras.layers.Flatten()(x)
+    x = tf.keras.layers.Dense(FLAGS['num_classes'], activation='softmax')(x)
 
-    # Get Inception score
-    inception_score = get_inception_score(inception_input, inception_model)
-    print("Inception Score:", inception_score)
+    # Create a new model with the desired output from 'x'
+    model = Model(inputs=base_model.input, outputs=x)
+
+    # Load weights from checkpoint
+    if FLAGS['checkpoint_dir']:
+        model.load_weights(FLAGS['checkpoint_dir'])
+
+    return model
 
 
+def calculate_inception_score(images, model):
+    """Calculates the Inception Score for a list of images."""
+    splits = FLAGS['splits']
+    batch_size = FLAGS['batch_size']
+
+    preds = []
+    num_examples = len(images)
+    n_batches = int(np.ceil(float(num_examples) / float(batch_size)))
+
+    for i in range(n_batches):
+        start_idx = i * batch_size
+        end_idx = min((i + 1) * batch_size, num_examples)
+        batch_images = images[start_idx: end_idx]
+
+        # Preprocess batch
+        batch_images = [preprocess(img) for img in batch_images]
+        batch_images = np.stack(batch_images, axis=0)
+
+        # Get model predictions
+        batch_preds = model.predict(batch_images)
+        preds.append(batch_preds)
+
+    preds = np.concatenate(preds, axis=0)
+
+    # Inception Score calculation 
+    scores = []
+    for i in range(splits):
+        part = preds[i * (preds.shape[0] // splits): (i + 1) * (preds.shape[0] // splits)]
+        kl = part * (np.log(part) - np.log(np.expand_dims(np.mean(part, 0), 0)))
+        kl = np.mean(np.sum(kl, 1))
+        scores.append(np.exp(kl))
+
+    return np.mean(scores), np.std(scores)
+
+
+# Main execution
 if __name__ == '__main__':
-    tf.compat.v1.app.run()
+    images = load_data(FLAGS['image_folder'])
+    model = build_model()
+    mean_score, std_score = calculate_inception_score(images, model)
+    print('Inception Score: mean:', mean_score, 'std:', std_score)
