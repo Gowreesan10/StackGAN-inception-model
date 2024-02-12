@@ -63,6 +63,8 @@ def build_model():
          Keras Model with the Inception v3 architecture, loaded from
          checkpoint if specified.
     """
+    current_directory = os.getcwd()
+    print("Current directory:", current_directory)
     base_model = InceptionV3(
         include_top=False,
         weights='imagenet',
